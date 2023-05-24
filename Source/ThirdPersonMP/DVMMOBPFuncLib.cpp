@@ -8,34 +8,72 @@
 #include "HAL/Runnable.h"
 #include "HAL/RunnableThread.h"
 
-class UDPServer : public FRunnable {
-public:
-	UDPServer(int32 Port) {
-		ListenSocket = FUdpSocketBuilder(TEXT("UDPSERVER"))
-			.AsNonBlocking()
-			.AsReusable()
-			.BoundToPort(Port)
-			.Build();
+FUDPServer::FUDPServer(int32 Port) {
+	ListenSocket = FUdpSocketBuilder(TEXT("UDPSERVER"))
+		.AsNonBlocking()
+		.AsReusable()
+		.BoundToPort(Port)
+		.Build();
 
-		Thread = FRunnableThread::Create(this, TEXT("UDPServer"), 0, TPri_BelowNormal);
-	}
+	Thread = FRunnableThread::Create(this, TEXT("UDPServer"), 0, TPri_BelowNormal);
+}
 
-	virtual uint32 Run() override {
-		while (true) {
-			if (ListenSocket) {
-				TSharedRef<FInternetAddr> Sender = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
-				int32 BytesRead;
-				uint8 Data[1024];
+FUDPServer::~FUDPServer() {
+	Thread->Kill(true);
+	delete Thread;
+	ListenSocket->Close();
+	ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(ListenSocket);
+}
 
-				// Receive the data
-				bool bReceivedData = ListenSocket->RevcFrom(Data, 1024, BytesRead, *Sender);
+uint32 FUDPServer::Run() {
+	while (true) {
+		if (ListenSocket) {
+			TSharedRef<FInternetAddr> Sender = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+			int32 BytesRead;
+			uint8 Data[1024];
 
-				if (bReceivedData) {
-					// Received some data, process it here
+			// Receive the data
+			bool bReceivedData = ListenSocket->RecvFrom(Data, 1024, BytesRead, *Sender);
 
-				}
+			if (bReceivedData) {
+				// Received some data, process it here
+
 			}
 		}
 	}
+	return 0;
 };
 
+bool UDVMMOBPFuncLib::StartUDPServer(int32 Port) {
+	FUDPServer* Server = new FUDPServer(Port);
+	return Server != nullptr;
+}
+
+bool UDVMMOBPFuncLib::SendGameMessageToServer(FString IPAddress, int32 Port, FGameMessageStruct Message) {
+	// Create a socket
+	FSocket* Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_DGram, TEXT("default"), false);
+
+	// Create an internet address
+	TSharedRef<FInternetAddr> addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+	bool bIsValid;
+	addr->SetIp(*IPAddress, bIsValid);
+	if (!bIsValid) {
+		return false;
+	}
+	addr->SetPort(Port);
+
+	// Serialize the struct to a byte array
+	TArray<uint8> Bytes;
+	FMemoryWriter MemoryWriter(Bytes, true);
+	MemoryWriter << Message;
+
+	// Send the bytes
+	int32 BytesSent;
+	bool bSuccess = Socket->SendTo(Bytes.GetData(), Bytes.Num(), BytesSent, *addr);
+
+	// Clean up the socket
+	Socket->Close();
+	ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
+
+	return bSuccess;
+}

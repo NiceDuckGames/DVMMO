@@ -9,6 +9,32 @@
 #include "Networking/Public/Interfaces/IPv4/IPv4Address.h"
 #include "DVMMOBPFuncLib.generated.h" // always include this last
 
+
+class FUDPServer : public FRunnable {
+public:
+	FUDPServer(int32 Port);
+
+	virtual uint32 Run() override;
+	virtual ~FUDPServer();
+
+private:
+	FSocket* ListenSocket;
+	FRunnableThread* Thread;
+};
+
+struct FGameMessageStruct {
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 MessageID;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 MessageType; // TODO: Define enum for this 1 input, 2 position, 3 chat message, etc
+
+	UPROPERTY(BlueprintReadWrite)
+	FString MessageBody; // JSON?
+};
+
 /**
  * 
  */
@@ -20,15 +46,7 @@ class THIRDPERSONMP_API UDVMMOBPFuncLib : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(BlueprintCallable, Category = "Networking")
 	static bool StartUDPServer(int32 Port);
-};
 
-class UDPServer : public FRunnable {
-public:
-	UDPServer(int32 Port);
-
-	virtual uint32 Run() override;
-
-private:
-	FSocket* ListenSocket;
-	FRunnableThread* Thread;
+	UFUNCTION(BlueprintCallable, Category = "Networking")
+	static bool SendGameMessageToServer(int32 Port);
 };

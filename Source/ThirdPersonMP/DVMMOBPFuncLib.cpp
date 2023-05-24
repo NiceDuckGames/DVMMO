@@ -7,6 +7,7 @@
 #include "Networking/Public/Interfaces/IPv4/IPv4Address.h" // not sure why I need the full path
 #include "HAL/Runnable.h"
 #include "HAL/RunnableThread.h"
+#include "Serialization/MemoryWriter.h"
 
 FUDPServer::FUDPServer(int32 Port) {
 	ListenSocket = FUdpSocketBuilder(TEXT("UDPSERVER"))

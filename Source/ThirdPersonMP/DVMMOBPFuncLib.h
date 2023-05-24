@@ -22,6 +22,7 @@ private:
 	FRunnableThread* Thread;
 };
 
+USTRUCT(BlueprintType)
 struct FGameMessageStruct {
 	GENERATED_BODY()
 
@@ -48,5 +49,5 @@ public:
 	static bool StartUDPServer(int32 Port);
 
 	UFUNCTION(BlueprintCallable, Category = "Networking")
-	static bool SendGameMessageToServer(int32 Port);
+	static bool SendGameMessageToServer(int32 Port, FGameMessageStruct Message);
 };

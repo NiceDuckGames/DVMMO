@@ -8,6 +8,9 @@
 #include "HAL/Runnable.h"
 #include "HAL/RunnableThread.h"
 #include "Serialization/MemoryWriter.h"
+#include "Containers/UnrealString.h"
+#include "Logging/LogMacros.h"
+
 
 FUDPServer::FUDPServer(int32 Port) {
 	ListenSocket = FUdpSocketBuilder(TEXT("UDPSERVER"))
@@ -38,7 +41,8 @@ uint32 FUDPServer::Run() {
 
 			if (bReceivedData) {
 				// Received some data, process it here
-
+				FString DataString = BytesToString(Data, BytesRead);
+				UE_LOG(LogTemp, Warning, TEXT("Got message: %s"), *DataString)
 			}
 		}
 	}
@@ -66,7 +70,7 @@ bool UDVMMOBPFuncLib::SendGameMessageToServer(FString IPAddress, int32 Port, FGa
 	// Serialize the struct to a byte array
 	TArray<uint8> Bytes;
 	FMemoryWriter MemoryWriter(Bytes, true);
-	MemoryWriter << Message;
+	Message.StaticStruct()->Serialize(MemoryWriter);
 
 	// Send the bytes
 	int32 BytesSent;

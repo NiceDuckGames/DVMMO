@@ -49,5 +49,5 @@ public:
 	static bool StartUDPServer(int32 Port);
 
 	UFUNCTION(BlueprintCallable, Category = "Networking")
-	static bool SendGameMessageToServer(int32 Port, FGameMessageStruct Message);
+	static bool SendGameMessageToServer(FString IPAddress, int32 Port, FGameMessageStruct Message);
 };
